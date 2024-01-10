@@ -33,12 +33,14 @@ func parseHTTP1(request []byte) Response {
 
 	if len(firstLine) != 3 {
 		return Response{
+			Timestamp:   time.Now().UnixMilli(),
 			HTTPVersion: "--",
 			Method:      "--",
 			path:        "--",
 		}
 	}
 	return Response{
+		Timestamp:   time.Now().UnixMilli(),
 		HTTPVersion: firstLine[2],
 		path:        firstLine[1],
 		Method:      firstLine[0],
@@ -283,6 +285,7 @@ func handleHTTP2(conn net.Conn, tlsFingerprint TLSDetails) {
 	}
 
 	resp := Response{
+		Timestamp:   time.Now().UnixMilli(),
 		IP:          conn.RemoteAddr().String(),
 		HTTPVersion: "h2",
 		path:        path,

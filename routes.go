@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/url"
 	"strings"
 )
@@ -106,6 +107,26 @@ func index(r Response, v url.Values) ([]byte, string) {
 	return []byte(strings.ReplaceAll(string(res), "/*DATA*/", string(data))), ct
 }
 
+// write all to log/db and return an empty pixel
+func apiEmptyGif(res Response, _ url.Values) ([]byte, string) {
+	// Define the byte slice for a 1x1 transparent GIF
+	var emptyGif = []byte{
+		0x47, 0x49, 0x46, 0x38, 0x39, 0x61, 0x01, 0x00,
+		0x01, 0x00, 0x80, 0xff, 0x00, 0xc0, 0xc0, 0xc0,
+		0x00, 0xff, 0xff, 0xff, 0x21, 0xf9, 0x04, 0x01,
+		0x00, 0x00, 0x00, 0x00, 0x2c, 0x00, 0x00, 0x00,
+		0x00, 0x01, 0x00, 0x01, 0x00, 0x00, 0x02, 0x02,
+		0x44, 0x01, 0x00, 0x3b,
+	}
+	data, err := json.Marshal(res)
+	if err != nil {
+		log.Fatalf("Error occurred during marshaling. Error: %s", err.Error())
+	} else {
+		Log(string(data)) // todo: write to file/db
+	}
+	return emptyGif, "image/gif"
+}
+
 func getAllPaths() map[string]func(Response, url.Values) ([]byte, string) {
 	return map[string]func(Response, url.Values) ([]byte, string){
 		"/":                     index,
@@ -118,5 +139,6 @@ func getAllPaths() map[string]func(Response, url.Values) ([]byte, string) {
 		"/api/search-h2":        apiSearchH2,
 		"/api/search-peetprint": apiSearchPeetPrint,
 		"/api/search-useragent": apiSearchUserAgent,
+		"/pixel.gif":            apiEmptyGif,
 	}
 }
