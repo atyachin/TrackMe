@@ -13,7 +13,7 @@ import (
 var (
 	//device string = "eth0"															// local Linux
 	//device       string = "ens5"														// EC2
-	device       string = "\\Device\\NPF_{44FFAEAA-EED7-4351-B4BE-D4A5AEADBDC4}" // Windows
+	device       string = "\\Device\\NPF_{44FFAEAA-EED7-4351-B4BE-D4A5AEADBDC4}" // Windows (find using devices())
 	snapshot_len int32  = 1024
 	promiscuous  bool   = false
 	err          error
