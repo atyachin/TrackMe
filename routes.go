@@ -122,7 +122,7 @@ func apiEmptyGif(res Response, _ url.Values) ([]byte, string) {
 	if err != nil {
 		log.Fatalf("Error occurred during marshaling. Error: %s", err.Error())
 	} else {
-		Log(string(data)) // todo: write to file/db
+		Log(string(data))
 	}
 	return emptyGif, "image/gif"
 }
