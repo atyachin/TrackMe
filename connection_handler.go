@@ -200,7 +200,8 @@ func respondToHTTP1(conn net.Conn, resp Response) {
 	res := "HTTP/1.1 200 OK\r\n"
 	res += "Content-Length: " + fmt.Sprintf("%v\r\n", len(res1))
 	res += "Content-Type: " + ctype + "; charset=utf-8\r\n"
-	res += "Server: TrackMe\r\n"
+	//res += "Server: TrackMe\r\n"
+	res += "Server: cloudflare\r\n"
 	res += "\r\n"
 	res += string(res1)
 	res += "\r\n\r\n"
