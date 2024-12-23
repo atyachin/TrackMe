@@ -36,13 +36,13 @@ func parseHTTP1(request []byte) Response {
 			Timestamp:   time.Now().UnixMilli(),
 			HTTPVersion: "--",
 			Method:      "--",
-			path:        "--",
+			Path:        "--",
 		}
 	}
 	return Response{
 		Timestamp:   time.Now().UnixMilli(),
 		HTTPVersion: firstLine[2],
-		path:        firstLine[1],
+		Path:        firstLine[1],
 		Method:      firstLine[0],
 		Http1: &Http1Details{
 			Headers: headers,
@@ -195,7 +195,7 @@ func respondToHTTP1(conn net.Conn, resp Response) {
 	// log.Println("Request:", resp.ToJson())
 	// log.Println(len(resp.ToJson()))
 
-	res1, ctype := Router(resp.path, resp)
+	res1, ctype := Router(resp.Path, resp)
 
 	res := "HTTP/1.1 200 OK\r\n"
 	res += "Content-Length: " + fmt.Sprintf("%v\r\n", len(res1))
@@ -289,7 +289,7 @@ func handleHTTP2(conn net.Conn, tlsFingerprint TLSDetails) {
 		Timestamp:   time.Now().UnixMilli(),
 		IP:          conn.RemoteAddr().String(),
 		HTTPVersion: "h2",
-		path:        path,
+		Path:        path,
 		Method:      method,
 		UserAgent:   userAgent,
 		Http2: &Http2Details{

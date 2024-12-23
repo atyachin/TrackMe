@@ -44,14 +44,14 @@ func Router(path string, res Response) ([]byte, string) {
 	res.TCPIP = TCPFingerprints[cleanIP(res.IP)]
 	res.TLS.JA4 = CalculateJa4(res.TLS)
 	// res.Donate = "Please consider donating to keep this API running."
-	Log(fmt.Sprintf("%v %v %v %v %v", cleanIP(res.IP), res.Method, res.HTTPVersion, res.path, res.TLS.JA3Hash))
+	Log(fmt.Sprintf("%v %v %v %v %v", cleanIP(res.IP), res.Method, res.HTTPVersion, res.Path, res.TLS.JA3Hash))
 	// if GetUserAgent(res) == "" {
 	//	return []byte("{\"error\": \"No user-agent\"}"), "text/html"
 	// }
-	if c.LogToDB && res.path != "/favicon.ico" {
+	if c.LogToDB && res.Path != "/favicon.ico" {
 		SaveRequest(res)
 	}
-	if c.LogFile != "" && res.path != "/favicon.ico" {
+	if c.LogFile != "" && res.Path != "/favicon.ico" {
 		data, err := json.Marshal(res)
 		if err != nil {
 			log.Fatalf("Error occurred during marshaling. Error: %s", err.Error())

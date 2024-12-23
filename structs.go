@@ -39,7 +39,7 @@ type Response struct {
 	Timestamp   int64         `json:"timestamp"`
 	IP          string        `json:"ip"`
 	HTTPVersion string        `json:"http_version"`
-	path        string        `json:"-"`
+	Path        string        `json:"path"`
 	Method      string        `json:"method"`
 	UserAgent   string        `json:"user_agent,omitempty"`
 	TLS         TLSDetails    `json:"tls"`
