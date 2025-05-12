@@ -5,9 +5,12 @@
   "cert_file": "certs/chain.pem",
   "key_file": "certs/key.pem",
   "host": "0.0.0.0",
-  "mongoURL": "",
+  "http_redirect": "https://tls.peet.ws",
+  "mongo_url": "",
   "mongo_database": "TrackMe",
   "mongo_collection": "requests",
+  "log_file": "",
   "mongo_log_ips": false,
-  "log_file": ""
+  "device": "eth0",
+  "cors_key": "X-CORS"
 }

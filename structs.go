@@ -16,6 +16,7 @@ type TLSDetails struct {
 	JA3Hash string `json:"ja3_hash"`
 
 	JA4 string `json:"ja4"`
+	JA4_r string `json:"ja4_r"`
 
 	PeetPrint     string `json:"peetprint"`
 	PeetPrintHash string `json:"peetprint_hash"`
@@ -60,6 +61,8 @@ func (res Response) ToJson() string {
 type SmallResponse struct {
 	JA3           string `json:"ja3"`
 	JA3Hash       string `json:"ja3_hash"`
+	JA4           string `json:"ja4"`
+	JA4_r           string `json:"ja4_r"`
 	Akamai        string `json:"akamai"`
 	AkamaiHash    string `json:"akamai_hash"`
 	PeetPrint     string `json:"peetprint"`
@@ -107,11 +110,14 @@ type Config struct {
 	CertFile   string `json:"cert_file"`
 	KeyFile    string `json:"key_file"`
 	Host       string `json:"host"`
-	MongoURL   string `json:"mongoURL"`
+	MongoURL   string `json:"mongo_url"`
 	Collection string `json:"mongo_collection"`
 	DB         string `json:"mongo_database"`
 	LogIPs     bool   `json:"mongo_log_ips"`
 	LogFile    string `json:"log_file"`
+	HTTPRedirect string `json:"http_redirect"`
+	Device       string `json:"device"`
+	CorsKey      string `json:"cors_key"`
 }
 
 func (c *Config) LoadFromFile() error {
@@ -139,6 +145,9 @@ func (c *Config) LoadFromFile() error {
 	c.DB = tmp.DB
 	c.LogIPs = tmp.LogIPs
 	c.LogFile = tmp.LogFile
+	c.HTTPRedirect = tmp.HTTPRedirect
+	c.Device = tmp.Device
+	c.CorsKey = tmp.CorsKey
 	return nil
 }
 
@@ -162,4 +171,6 @@ func (c *Config) MakeDefault() {
 	c.Collection = "requests"
 	c.DB = "TrackMe"
 	c.LogIPs = false
+	c.HTTPRedirect = "https://tls.peet.ws"
+	c.CorsKey = "X-CORS"
 }

@@ -122,6 +122,10 @@ func WriteToFile(filename string, data []byte) error {
 	return nil
 }
 
+func GetAdmin() (string, bool) {
+	return LoadedConfig.CorsKey, LoadedConfig.CorsKey != ""
+}
+
 func IsIPBlocked(ip string) bool {
 	rawIPs, err := ReadFile("blockedIPs")
 	if err != nil {
@@ -162,8 +166,8 @@ func splitBytesIntoChunks(buf []byte, lim int) [][]byte {
 }
 
 type kv struct {
-	Key   string
-	Value int
+	Key   string `json:"key"`
+	Value int    `json:"value"`
 }
 
 func sortByVal(m map[string]int, x int) map[string]int {
@@ -192,7 +196,7 @@ func sortByVal(m map[string]int, x int) map[string]int {
 	return res
 }
 
-func getParam(key string, m url.Values) string {
+func getParam(_ string, m url.Values) string {
 	if val, ok := m["by"]; ok {
 		if len(val) != 0 {
 			return val[0]

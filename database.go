@@ -59,7 +59,7 @@ func SaveRequest(req Response) {
 	} else if req.HTTPVersion == "http/1.1" {
 		reqLog.H2 = "-"
 	}
-	if c.LogIPs {
+	if LoadedConfig.LogIPs {
 		parts := strings.Split(req.IP, ":")
 		ip := strings.Join(parts[0:len(parts)-1], ":")
 		reqLog.IP = ip
@@ -73,6 +73,9 @@ func SaveRequest(req Response) {
 }
 
 func GetTotalRequestCount() int64 {
+	if !connectedToDB {
+		return 999
+	}
 	itemCount, err := collection.CountDocuments(ctx, bson.M{})
 	if err != nil {
 		log.Println(err)

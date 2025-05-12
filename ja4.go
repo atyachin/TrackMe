@@ -68,29 +68,62 @@ func ja4a(tls TLSDetails) string {
 
 	return fmt.Sprintf("%v%v%v%v%v%v", proto, tlsVersion, sniMode, numSuites, numExtensions, firstALPN)
 }
-func ja4b(tls TLSDetails) string {
+
+func ja4b_r(tls TLSDetails) string {
 	suites := strings.Split(strings.Split(tls.JA3, ",")[1], "-")
 	parsed := toHexAll(suites, false, true)
 	// fmt.Println("ja4b:", strings.Join(parsed, ","))
-	return sha256trunc(strings.Join(parsed, ","))
+	return strings.Join(parsed, ",")
 }
 
-func ja4c(tls TLSDetails) string {
+func ja4b(tls TLSDetails) string {
+	result := ja4b_r(tls)
+	return sha256trunc(result)
+}
+
+func ja4c_r(tls TLSDetails) string {
+	// Get extensions and signature algorithms
 	extensions := strings.Split(strings.Split(tls.JA3, ",")[2], "-")
 	sigAlgs := strings.Split(strings.Split(tls.PeetPrint, "|")[3], "-")
 
-	// VERY dirty hack: append padding, because it gets filtered out for JA3
-	// but we want it here. _SHOULD_ be included in ever TLS clienthello, so
-	// _shouldnt_ cause any issues.
-	extensions = append(extensions, "21")
+	// Convert extensions to hex, filter GREASE and padding, and sort
+	parsedExt := []string{}
+	for _, ext := range extensions {
+		num, _ := strconv.Atoi(ext)
+		hexStr := fmt.Sprintf("%04x", num)
+		// Skip if it's a GREASE value or padding extension
+		if isGrease("0x"+strings.ToUpper(hexStr)) || hexStr == "0010" {
+			continue
+		}
+		parsedExt = append(parsedExt, hexStr)
+	}
+	sort.Strings(parsedExt)
 
-	parsedExt := toHexAll(extensions, true, true)
-	parsedAlg := toHexAll(sigAlgs, false, false)
+	// Convert signature algorithms to hex
+	parsedAlg := []string{}
+	for _, alg := range sigAlgs {
+		if alg == "GREASE" {
+			continue
+		}
+		num, _ := strconv.Atoi(alg)
+		hexStr := fmt.Sprintf("%04x", num)
+		parsedAlg = append(parsedAlg, hexStr)
+	}
+
+	// Join the results
 	parsed := strings.Join(parsedExt, ",") + "_" + strings.Join(parsedAlg, ",")
-	// fmt.Println("ja4c:", parsed)
-	return sha256trunc(parsed)
+	return parsed
+}
+
+func ja4c(tls TLSDetails) string {
+	result := ja4c_r(tls)
+	return sha256trunc(result)
 }
 
 func CalculateJa4(tls TLSDetails) string {
 	return ja4a(tls) + "_" + ja4b(tls) + "_" + ja4c(tls)
+}
+
+func CalculateJa4_r(tls TLSDetails) string {
+	return ja4a(tls) + "_" + ja4b_r(tls) + "_" + ja4c_r(tls)
 }

@@ -35,6 +35,8 @@ func apiClean(res Response, _ url.Values) ([]byte, string) {
 	return []byte(SmallResponse{
 		JA3:           res.TLS.JA3,
 		JA3Hash:       res.TLS.JA3Hash,
+		JA4:           res.TLS.JA4,
+		JA4_r:           res.TLS.JA4_r,
 		Akamai:        akamai,
 		AkamaiHash:    hash,
 		PeetPrint:     res.TLS.PeetPrint,

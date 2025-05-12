@@ -64,25 +64,25 @@ type TCPIPDetails struct {
 	TCP       TCPDetails `json:"tcp,omitempty"`
 }
 
-func devices() {
-	// Find all devices
-	devices, err := pcap.FindAllDevs()
-	if err != nil {
-		log.Fatal(err)
-	}
+// func devices() {
+// 	// Find all devices
+// 	devices, err := pcap.FindAllDevs()
+// 	if err != nil {
+// 		log.Fatal(err)
+// 	}
 
-	// Print device information
-	fmt.Println("Devices found:")
-	for _, device := range devices {
-		fmt.Println("\nName: ", device.Name)
-		fmt.Println("Description: ", device.Description)
-		fmt.Println("Devices addresses: ", device.Description)
-		for _, address := range device.Addresses {
-			fmt.Println("- IP address: ", address.IP)
-			fmt.Println("- Subnet mask: ", address.Netmask)
-		}
-	}
-}
+// 	// Print device information
+// 	fmt.Println("Devices found:")
+// 	for _, device := range devices {
+// 		fmt.Println("\nName: ", device.Name)
+// 		fmt.Println("Description: ", device.Description)
+// 		fmt.Println("Devices addresses: ", device.Description)
+// 		for _, address := range device.Addresses {
+// 			fmt.Println("- IP address: ", address.IP)
+// 			fmt.Println("- Subnet mask: ", address.Netmask)
+// 		}
+// 	}
+// }
 
 func parseIP(packet gopacket.Packet) *IPDetails {
 	if ipLayer := packet.Layer(layers.LayerTypeIPv4); ipLayer == nil {
@@ -114,8 +114,8 @@ func parseIP(packet gopacket.Packet) *IPDetails {
 	}
 }
 
-func sniffTCP() {
-	//devices()
+func sniffTCP(device string, tlsPort int) {
+	// devices()
 	// Open device
 	handle, err = pcap.OpenLive(device, snapshot_len, promiscuous, timeout)
 	if err != nil {
@@ -130,7 +130,7 @@ func sniffTCP() {
 
 			ip := parseIP(packet) //
 			tcp := tcpLayer.(*layers.TCP)
-			if !tcp.ACK || tcp.DstPort != 443 || ip.IPVersion == 0 {
+			if !tcp.ACK || int(tcp.DstPort) != tlsPort || ip.IPVersion == 0 {
 				continue
 			}
 			// Process packet here
@@ -166,18 +166,18 @@ func sniffTCP() {
 			src := fmt.Sprintf("%s:%v", pack.IP.SrcIP, pack.SrcPort)
 			// dst := fmt.Sprintf("%s:%v", pack.IP.DstIp, pack.DstPort)
 			// fmt.Printf("TCP Packet %v -> %v\n", src, dst)
-			TCPFingerprints[src] = pack
+			TCPFingerprints.Store(src, pack)
 		}
 	}
 }
 
-func parseTCPOptions(TCPOption []layers.TCPOption) string {
+func parseTCPOptions(_ []layers.TCPOption) string {
 	// for _, opt := range TCPOption {
 	// 	 fmt.Println("OPTION:", opt.OptionType.String(), opt.String())
 	// }
 	return ""
 }
 
-func parseTCPOptionsOrder(TCPOption []layers.TCPOption) string {
+func parseTCPOptionsOrder(_ []layers.TCPOption) string {
 	return ""
 }

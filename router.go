@@ -41,22 +41,25 @@ func cleanIP(ip string) string {
 
 // Router returns bytes and content type that should be sent to the client
 func Router(path string, res Response) ([]byte, string) {
-	res.TCPIP = TCPFingerprints[cleanIP(res.IP)]
+	if v, ok := TCPFingerprints.Load(cleanIP(res.IP)); ok {
+		res.TCPIP = v.(TCPIPDetails)
+	}
 	res.TLS.JA4 = CalculateJa4(res.TLS)
-	// res.Donate = "Please consider donating to keep this API running."
+	res.TLS.JA4_r = CalculateJa4_r(res.TLS)
+	// res.Donate = "Please consider donating to keep this API running. Visit https://tls.peet.ws"
 	Log(fmt.Sprintf("%v %v %v %v %v", cleanIP(res.IP), res.Method, res.HTTPVersion, res.Path, res.TLS.JA3Hash))
 	// if GetUserAgent(res) == "" {
 	//	return []byte("{\"error\": \"No user-agent\"}"), "text/html"
 	// }
-	if c.LogToDB && res.Path != "/favicon.ico" {
+	if LoadedConfig.LogToDB && res.Path != "/favicon.ico" {
 		SaveRequest(res)
 	}
-	if c.LogFile != "" && res.Path != "/favicon.ico" {
+	if LoadedConfig.LogFile != "" && res.Path != "/favicon.ico" {
 		data, err := json.Marshal(res)
 		if err != nil {
 			log.Fatalf("Error occurred during marshaling. Error: %s", err.Error())
 		} else {
-			WriteLog(string(data), c.LogFile)
+			WriteLog(string(data), LoadedConfig.LogFile)
 		}
 	}
 
