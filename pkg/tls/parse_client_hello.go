@@ -50,7 +50,10 @@ func hexToString(in string) string {
 }
 
 func parsePacketType(ch string, c int) (string, int) {
-	pType := ch[c:2]
+	if len(ch) < c+2 {
+		return "", c
+	}
+	pType := ch[c : c+2]
 	if pType == "01" {
 		return "CLIENT_HELLO", c + 2
 	} else if pType == "02" {
@@ -61,36 +64,57 @@ func parsePacketType(ch string, c int) (string, int) {
 }
 
 func parsePacketLength(ch string, c int) (int, int) {
+	if len(ch) < c+6 {
+		return 0, c
+	}
 	length := ch[c : c+6]
 	return hexToInt(length), c + 6
 }
 
 func parseTLSVersion(ch string, c int) (int, int) {
+	if len(ch) < c+4 {
+		return 0, c
+	}
 	v := ch[c : c+4]
 	return hexToInt(v), c + 4
 }
 
 func parseClientRandom(ch string, c int) (string, int) {
+	if len(ch) < c+64 {
+		return "", c
+	}
 	cr := ch[c : c+64]
 	return cr, c + 64
 }
 
 func parseSessionID(ch string, c int) (string, int) {
+	if len(ch) < c+2 {
+		return "", c
+	}
 	length_raw := ch[c : c+2]
 	c += 2
 	length := hexToInt(length_raw) * 2
+	if len(ch) < c+length {
+		return "", c
+	}
 	sid := ch[c : c+length]
 	return sid, c + length
 }
 
 func parseCipherSuites(ch string, c int) ([]uint16, int) {
+	if len(ch) < c+4 {
+		return nil, c
+	}
 	length_raw := ch[c : c+4]
 	c += 4
 	length := hexToInt(length_raw) * 2
+	if len(ch) < c+length {
+		return nil, c
+	}
 	rawSuites := ch[c : c+length]
 	suites := []uint16{}
 	tmpC := 0
-	for tmpC < len(rawSuites) {
+	for tmpC+4 <= len(rawSuites) {
 		suites = append(suites, uint16(hexToInt(rawSuites[tmpC:tmpC+4])))
 		tmpC += 4
 	}
@@ -99,27 +123,45 @@ func parseCipherSuites(ch string, c int) ([]uint16, int) {
 }
 
 func parseCompressionMethods(ch string, c int) (string, int) {
+	if len(ch) < c+2 {
+		return "", c
+	}
 	length_raw := ch[c : c+2]
 	length := hexToInt(length_raw) * 2
 	c += 2
+	if len(ch) < c+length {
+		return "", c
+	}
 	return "0x" + ch[c:c+length], c + length
 }
 
 func parseExtensions(ch string, c int) ([]Extension, int) {
+	if len(ch) < c+4 {
+		return nil, c
+	}
 	length_raw := ch[c : c+4]
 	length := hexToInt(length_raw) * 2
 	c += 4
 
+	if len(ch) < c+length {
+		return nil, c
+	}
 	rawExtensions := ch[c : c+length]
 	extensions := []Extension{}
 	tmpC := 0
 
 	for {
+		if tmpC+8 > len(rawExtensions) {
+			break
+		}
 		ext := Extension{}
 		ext.Type = rawExtensions[tmpC : tmpC+4]
 		tmpC += 4
 		ext.Length = hexToInt(rawExtensions[tmpC:tmpC+4]) * 2
 		tmpC += 4
+		if tmpC+ext.Length > len(rawExtensions) {
+			break
+		}
 		ext.Data = rawExtensions[tmpC : tmpC+ext.Length]
 		tmpC += ext.Length
 		extensions = append(extensions, ext)
@@ -174,6 +216,10 @@ func parseRawExtensions(exts []Extension, chp ClientHello) ([]interface{}, Clien
 				ServerName           string `json:"server_name"`
 			}{}
 			c.Name = "server_name (0)"
+			if len(d) < 10 {
+				tmp = c
+				break
+			}
 			c.ServerNameListLength = hexToInt(d[0:4])
 			serverNameType := "host_name"
 			if d[4:6] != "00" {
@@ -196,6 +242,13 @@ func parseRawExtensions(exts []Extension, chp ClientHello) ([]interface{}, Clien
 				name = "status_request_v2 (17)"
 			}
 
+			if len(d) < 6 {
+				tmp = struct {
+					Name string `json:"name"`
+				}{Name: name}
+				break
+			}
+
 			tmp = struct {
 				Name          string        `json:"name"`
 				StatusRequest StatusRequest `json:"status_request"`
@@ -213,9 +266,13 @@ func parseRawExtensions(exts []Extension, chp ClientHello) ([]interface{}, Clien
 				SupportedGroups []string `json:"supported_groups"`
 			}{}
 			c.Name = "supported_groups (10)"
+			if len(d) < 4 {
+				tmp = c
+				break
+			}
 			length := hexToInt(d[0:4])
 			tmpC := 4
-			for tmpC <= length*2 {
+			for tmpC <= length*2 && tmpC+4 <= len(d) {
 				val := d[tmpC : tmpC+4]
 				if types.IsGrease("0x" + strings.ToUpper(val)) {
 					chp.SupportedCurves = append(chp.SupportedCurves, 6969)
@@ -253,16 +310,21 @@ func parseRawExtensions(exts []Extension, chp ClientHello) ([]interface{}, Clien
 				AlgsLength int      `json:"-"`
 				Algorithms []string `json:"signature_algorithms"`
 			}{
-				Name:       "signature_algorithms (13)",
-				AlgsLength: hexToInt(d[0:4]) / 2,
+				Name: "signature_algorithms (13)",
 			}
 
 			if t == "0035" {
 				c.Name = "signature_algorithms_cert (50)"
 			}
 
+			if len(d) < 4 {
+				tmp = c
+				break
+			}
+			c.AlgsLength = hexToInt(d[0:4]) / 2
+
 			tmpC := 4
-			for tmpC <= (c.AlgsLength * 4) {
+			for tmpC <= (c.AlgsLength*4) && tmpC+4 <= len(d) {
 				asInt := uint16(hexToInt(d[tmpC : tmpC+4]))
 				chp.SignatureAlgorithms = append(chp.SignatureAlgorithms, int(asInt))
 				c.Algorithms = append(c.Algorithms, types.GetSignatureNameByID(asInt))
@@ -275,13 +337,20 @@ func parseRawExtensions(exts []Extension, chp ClientHello) ([]interface{}, Clien
 				ALPNExtensionLength int      `json:"-"`
 				Protocols           []string `json:"protocols"`
 			}{
-				Name:                "application_layer_protocol_negotiation (16)",
-				ALPNExtensionLength: hexToInt(d[0:4]),
+				Name: "application_layer_protocol_negotiation (16)",
 			}
+			if len(d) < 4 {
+				tmp = c
+				break
+			}
+			c.ALPNExtensionLength = hexToInt(d[0:4])
 			tmpC := 4
-			for tmpC <= c.ALPNExtensionLength*2 {
+			for tmpC <= c.ALPNExtensionLength*2 && tmpC+2 <= len(d) {
 				length := hexToInt(d[tmpC:tmpC+2]) * 2
 				tmpC += 2
+				if tmpC+length > len(d) {
+					break
+				}
 				proto := d[tmpC : tmpC+length]
 				tmpC += length
 				c.Protocols = append(c.Protocols, hexToString(proto))
@@ -332,6 +401,10 @@ func parseRawExtensions(exts []Extension, chp ClientHello) ([]interface{}, Clien
 				Algorithms []string `json:"algorithms"`
 			}{}
 			c.Name = "compress_certificate (27)"
+			if len(d) < 2 {
+				tmp = c
+				break
+			}
 			c.AlgsLength = hexToInt(d[:2])
 			count := 2
 			mapping := map[string]string{
@@ -339,7 +412,7 @@ func parseRawExtensions(exts []Extension, chp ClientHello) ([]interface{}, Clien
 				"0002": "brotli (2)",
 				"0003": "zstd (3)",
 			}
-			for len(c.Algorithms)*2 < c.AlgsLength {
+			for len(c.Algorithms)*2 < c.AlgsLength && count+4 <= len(d) {
 				chp.CertCompressionAlgorithms = append(chp.CertCompressionAlgorithms, hexToInt(d[count:count+4]))
 				c.Algorithms = append(c.Algorithms, getOrReturnOG(d[count:count+4], mapping))
 				count += 4
@@ -351,9 +424,13 @@ func parseRawExtensions(exts []Extension, chp ClientHello) ([]interface{}, Clien
 				SignatureHashAlgorithms []string `json:"signature_hash_algorithms"`
 			}{}
 			c.Name = "delegated_credentials (34)"
+			if len(d) < 4 {
+				tmp = c
+				break
+			}
 			length := hexToInt(d[0:4]) * 2
 			tmpC := 4
-			for len(c.SignatureHashAlgorithms)*4 < length {
+			for len(c.SignatureHashAlgorithms)*4 < length && tmpC+4 <= len(d) {
 				name := uint16(hexToInt(d[tmpC : tmpC+4]))
 				tmpC += 4
 				c.SignatureHashAlgorithms = append(c.SignatureHashAlgorithms, types.GetSignatureNameByID(name))
@@ -367,6 +444,10 @@ func parseRawExtensions(exts []Extension, chp ClientHello) ([]interface{}, Clien
 				Versions       []string `json:"versions"`
 			}{}
 			c.Name = "supported_versions (43)"
+			if len(d) < 2 {
+				tmp = c
+				break
+			}
 			c.VersionsLength = hexToInt(d[:2])
 			count := 2
 			mapping := map[string]string{
@@ -375,7 +456,7 @@ func parseRawExtensions(exts []Extension, chp ClientHello) ([]interface{}, Clien
 				"0302": "TLS 1.1",
 				"0301": "TLS 1.0",
 			}
-			for len(c.Versions)*2 < c.VersionsLength {
+			for len(c.Versions)*2 < c.VersionsLength && count+4 <= len(d) {
 				val := getOrReturnOG(d[count:count+4], mapping)
 				if types.IsGrease("0x" + strings.ToUpper(val)) {
 					val = "TLS_GREASE (0x" + val + ")"
