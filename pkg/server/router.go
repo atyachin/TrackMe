@@ -41,7 +41,6 @@ func Router(path string, res types.Response, srv *Server) ([]byte, string, error
 	if v, ok := srv.GetTCPFingerprints().Load(res.IP); ok {
 		res.TCPIP = v.(types.TCPIPDetails)
 	}
-	res.Donate = "Please consider donating to keep this API running. Visit https://tls.peet.ws"
 	if res.TLS != nil {
 		// Use QUIC JA4 for HTTP/3 connections
 		if res.HTTPVersion == "h3" {

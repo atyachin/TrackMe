@@ -107,7 +107,7 @@ type TCPIPDetails struct {
 }
 
 type Response struct {
-	Donate      string        `json:"donate"`
+	Donate      string        `json:"donate,omitempty"`
 	Timestamp   int64         `json:"timestamp"`
 	IP          string        `json:"ip"`
 	HTTPVersion string        `json:"http_version"`
