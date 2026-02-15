@@ -24,6 +24,10 @@ import (
 
 const HTTP2_PREAMBLE = "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n"
 
+func cloudflareHTTPDate() string {
+	return time.Now().UTC().Format(http.TimeFormat)
+}
+
 // parseHeaderValue safely extracts the value from a header string "key: value"
 func parseHeaderValue(header, prefix string) string {
 	if !strings.HasPrefix(header, prefix) {
@@ -267,6 +271,9 @@ func (srv *Server) respondToHTTP1(conn net.Conn, resp types.Response) {
 	res1 := "HTTP/1.1 200 OK\r\n"
 	res1 += "Content-Length: " + fmt.Sprintf("%v\r\n", len(res))
 	res1 += "Content-Type: " + ctype + "; charset=utf-8\r\n"
+	res1 += "Date: " + cloudflareHTTPDate() + "\r\n"
+	res1 += "Cf-Cache-Status: DYNAMIC\r\n"
+	res1 += "Vary: Accept-Encoding\r\n"
 	if isAdmin {
 		res1 += "Access-Control-Allow-Origin: *\r\n"
 		res1 += "Access-Control-Allow-Methods: *\r\n"
@@ -390,6 +397,9 @@ func (srv *Server) handleHTTP2(conn net.Conn, tlsFingerprint *types.TLSDetails) 
 	encoder := hpack.NewEncoder(hbuf)
 	encoder.WriteField(hpack.HeaderField{Name: ":status", Value: "200"})
 	encoder.WriteField(hpack.HeaderField{Name: "server", Value: "cloudflare"})
+	encoder.WriteField(hpack.HeaderField{Name: "date", Value: cloudflareHTTPDate()})
+	encoder.WriteField(hpack.HeaderField{Name: "cf-cache-status", Value: "DYNAMIC"})
+	encoder.WriteField(hpack.HeaderField{Name: "vary", Value: "Accept-Encoding"})
 	encoder.WriteField(hpack.HeaderField{Name: "content-length", Value: strconv.Itoa(len(res))})
 	encoder.WriteField(hpack.HeaderField{Name: "content-type", Value: ctype})
 	encoder.WriteField(hpack.HeaderField{Name: "alt-svc", Value: "h3=\":443\"; ma=86400"})
@@ -530,7 +540,10 @@ func (srv *Server) HandleHTTP3() http.Handler {
 		}
 
 		w.Header().Set("Content-Type", ctype)
-		w.Header().Set("Server", "TrackMe")
+		w.Header().Set("Server", "cloudflare")
+		w.Header().Set("Date", cloudflareHTTPDate())
+		w.Header().Set("Cf-Cache-Status", "DYNAMIC")
+		w.Header().Set("Vary", "Accept-Encoding")
 		w.Header().Set("Alt-Svc", `h3=":443"; ma=86400`)
 		if _, err := w.Write(res); err != nil {
 			log.Println("Error writing HTTP/3 response:", err)
