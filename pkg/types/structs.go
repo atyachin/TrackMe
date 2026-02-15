@@ -108,6 +108,7 @@ type TCPIPDetails struct {
 
 type Response struct {
 	Donate      string        `json:"donate"`
+	Timestamp   int64         `json:"timestamp"`
 	IP          string        `json:"ip"`
 	HTTPVersion string        `json:"http_version"`
 	Path        string        `json:"path"`
@@ -184,6 +185,7 @@ type Config struct {
 	HTTPRedirect string `json:"http_redirect"`
 	Device       string `json:"device"`
 	CorsKey      string `json:"cors_key"`
+	LogFile      string `json:"log_file"`
 	EnableQUIC   bool   `json:"enable_quic"`
 }
 
@@ -208,6 +210,7 @@ func (c *Config) LoadFromFile() error {
 	c.HTTPRedirect = tmp.HTTPRedirect
 	c.Device = tmp.Device
 	c.CorsKey = tmp.CorsKey
+	c.LogFile = tmp.LogFile
 	c.EnableQUIC = tmp.EnableQUIC
 	return nil
 }
@@ -231,5 +234,6 @@ func (c *Config) MakeDefault() {
 	c.KeyFile = "certs/key.pem"
 	c.HTTPRedirect = "https://tls.peet.ws"
 	c.CorsKey = "X-CORS"
+	c.LogFile = ""
 	c.EnableQUIC = true
 }

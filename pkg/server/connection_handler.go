@@ -41,6 +41,7 @@ func parseHTTP1(request []byte) types.Response {
 	lines := strings.Split(string(request), "\r\n")
 	if len(lines) == 0 {
 		return types.Response{
+			Timestamp:   time.Now().UnixMilli(),
 			HTTPVersion: "--",
 			Method:      "--",
 			Path:        "--",
@@ -66,12 +67,14 @@ func parseHTTP1(request []byte) types.Response {
 
 	if len(firstLine) != 3 {
 		return types.Response{
+			Timestamp:   time.Now().UnixMilli(),
 			HTTPVersion: "--",
 			Method:      "--",
 			Path:        "--",
 		}
 	}
 	return types.Response{
+		Timestamp:   time.Now().UnixMilli(),
 		HTTPVersion: firstLine[2],
 		Path:        firstLine[1],
 		Method:      firstLine[0],
@@ -354,6 +357,7 @@ func (srv *Server) handleHTTP2(conn net.Conn, tlsFingerprint *types.TLSDetails) 
 	}
 
 	resp := types.Response{
+		Timestamp:   time.Now().UnixMilli(),
 		IP:          conn.RemoteAddr().String(),
 		HTTPVersion: "h2",
 		Path:        path,
@@ -498,6 +502,7 @@ func (srv *Server) HandleHTTP3() http.Handler {
 		fingerprintHash := trackmehttp.GetHTTP3FingerprintHash(fingerprint)
 
 		resp := types.Response{
+			Timestamp:   time.Now().UnixMilli(),
 			IP:          r.RemoteAddr,
 			HTTPVersion: "h3",
 			Path:        r.URL.Path,

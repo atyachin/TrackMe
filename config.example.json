@@ -8,5 +8,6 @@
   "http_redirect": "https://tls.peet.ws",
   "device": "eth0",
   "cors_key": "X-CORS",
+  "log_file": "",
   "enable_quic": true
 }

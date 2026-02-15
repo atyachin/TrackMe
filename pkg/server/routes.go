@@ -86,13 +86,33 @@ func index(r types.Response, v url.Values) ([]byte, string, error) {
 	return []byte(strings.ReplaceAll(string(res), "/*DATA*/", string(data))), ct, nil
 }
 
+// apiEmptyGif returns a 1x1 transparent GIF and logs the full request payload.
+func apiEmptyGif(res types.Response, _ url.Values) ([]byte, string, error) {
+	emptyGif := []byte{
+		0x47, 0x49, 0x46, 0x38, 0x39, 0x61, 0x01, 0x00,
+		0x01, 0x00, 0x80, 0xff, 0x00, 0xc0, 0xc0, 0xc0,
+		0x00, 0xff, 0xff, 0xff, 0x21, 0xf9, 0x04, 0x01,
+		0x00, 0x00, 0x00, 0x00, 0x2c, 0x00, 0x00, 0x00,
+		0x00, 0x01, 0x00, 0x01, 0x00, 0x00, 0x02, 0x02,
+		0x44, 0x01, 0x00, 0x3b,
+	}
+
+	if data, err := json.Marshal(res); err == nil {
+		Log(string(data))
+	}
+
+	return emptyGif, "image/gif", nil
+}
+
 func getAllPaths() map[string]RouteHandler {
 	return map[string]RouteHandler{
-		"/":          index,
-		"/explore":   staticFile("static/explore.html"),
-		"/api/all":   apiAll,
-		"/api/tls":   apiTLS,
-		"/api/clean": apiClean,
-		"/api/raw":   apiRaw,
+		"/":              index,
+		"/explore":       staticFile("static/explore.html"),
+		"/api/all":       apiAll,
+		"/api/tls":       apiTLS,
+		"/api/clean":     apiClean,
+		"/api/raw":       apiRaw,
+		"/pixel.gif":     apiEmptyGif,
+		"/analytics.gif": apiEmptyGif,
 	}
 }

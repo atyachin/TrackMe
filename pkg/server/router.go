@@ -1,8 +1,11 @@
 package server
 
 import (
+	"encoding/json"
 	"fmt"
+	"log"
 	"net/url"
+	"os"
 	"strings"
 	"time"
 
@@ -15,6 +18,18 @@ func Log(msg string) {
 	t := time.Now()
 	formatted := t.Format("2006-01-02 15:04:05")
 	fmt.Printf("[%v] %v\n", formatted, msg)
+}
+
+// WriteLog appends a JSON string to the configured log file.
+func WriteLog(msg string, logFile string) error {
+	file, err := os.OpenFile(logFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	_, err = file.WriteString(msg + "\n\n")
+	return err
 }
 
 func cleanIP(ip string) string {
@@ -39,6 +54,14 @@ func Router(path string, res types.Response, srv *Server) ([]byte, string, error
 		Log(fmt.Sprintf("%v %v %v %v %v", cleanIP(res.IP), res.Method, res.HTTPVersion, res.Path, res.TLS.JA3Hash))
 	} else {
 		Log(fmt.Sprintf("%v %v %v %v %v", cleanIP(res.IP), res.Method, res.HTTPVersion, res.Path, "-"))
+	}
+	if srv.GetConfig().LogFile != "" && res.Path != "/favicon.ico" {
+		data, err := json.Marshal(res)
+		if err != nil {
+			log.Printf("failed to marshal request for file logging: %v", err)
+		} else if err := WriteLog(string(data), srv.GetConfig().LogFile); err != nil {
+			log.Printf("failed to write request log file: %v", err)
+		}
 	}
 
 	u, err := url.Parse("https://tls.peet.ws" + path)
